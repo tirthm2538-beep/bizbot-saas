@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [backendStatus, setBackendStatus] = useState<string>("checking...");
@@ -42,8 +43,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700">
+        <div className="flex items-center gap-3 text-sm">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700">
             <span
               className={`h-2.5 w-2.5 rounded-full ${
                 backendOnline === true
@@ -57,9 +58,18 @@ export default function Home() {
               Backend: <strong className="font-medium text-slate-100">{backendStatus}</strong>
             </span>
           </div>
-          <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow-sm">
+          <Link
+            href="/login"
+            className="px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition"
+          >
             Sign In
-          </button>
+          </Link>
+          <Link
+            href="/signup"
+            className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow-sm"
+          >
+            Get Started
+          </Link>
         </div>
       </header>
 
@@ -82,9 +92,12 @@ export default function Home() {
         </p>
 
         <div className="mt-8 flex flex-wrap gap-4 justify-center">
-          <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 transition">
+          <Link
+            href="/signup"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 transition"
+          >
             Launch Bot Studio
-          </button>
+          </Link>
           <a
             href="http://localhost:8000/health"
             target="_blank"
