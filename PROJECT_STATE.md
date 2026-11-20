@@ -6,20 +6,25 @@
 ---
 
 ## Current Status
-**Step 2: Database Schema & Authentication Setup (In Progress / Ready for Schema Execution)**
+**Step 2 Complete: Database Schema Executed & Authentication Operational**
 - [x] Backend initialized with FastAPI, Python venv, dependencies, CORS middleware, and `/health` endpoint.
 - [x] Frontend initialized with Next.js (App Router), Tailwind CSS, and TypeScript.
 - [x] Supabase project credentials connected:
   - `backend/.env` configured with `SUPABASE_URL` and `SUPABASE_KEY`.
   - `frontend/.env.local` configured with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- [x] Full database migration script authored at [schema.sql](file:///C:/Users/Dell-5470/Desktop/Tirth%20work/bizbot-saas/schema.sql) with Razorpay subscription fields and multi-tenant Row Level Security (RLS).
-- [x] Frontend Supabase client created at `frontend/src/lib/supabaseClient.ts`.
-- [x] Authentication flows built:
-  - Signup page (`/signup`): Email, password, and business name.
-  - Login page (`/login`): Email and password authentication.
-  - Protected Dashboard (`/dashboard`): Restricted to authenticated sessions, greeting with business name & tier, placeholder "Create your first bot" modal, and logout support.
-- [x] Build verified: Next.js production build succeeds with all routes compiled cleanly.
-- [ ] Next Action: User reviews and executes `schema.sql` in Supabase SQL Editor.
+- [x] Migration script `schema.sql` successfully executed in Supabase:
+  - `public.users`: Business accounts tied to Supabase Auth (`auth.users`).
+  - `public.subscriptions`: Razorpay subscription plan tracking (`free`, `starter`, `pro`).
+  - `public.bots`: Multi-bot architecture with system prompts, branding colors, and public tokens.
+  - `public.messages`: Chat conversation logs, session tracking, and token metrics.
+  - `public.handle_new_user()` trigger: Automatically creates business account and default `free` tier subscription upon signup.
+  - Multi-tenant Row Level Security (RLS) enabled across all tables.
+- [x] Authentication flows built & tested:
+  - `/signup`: Business registration (email, password, business name).
+  - `/login`: Business owner sign-in.
+  - `/dashboard`: Protected route with session check, welcoming the authenticated user, displaying business name and subscription tier, and placeholder for "Create your first bot".
+  - Redirect handling: Unauthorized visitors to `/dashboard` are redirected to `/login`.
+- [x] Automated test script created at `scripts/test_auth.mjs`.
 
 ---
 
@@ -76,58 +81,10 @@ erDiagram
     }
 ```
 
-### Table Specifications
-
-#### 1. `users` (Business Accounts / Profiles)
-- `id`: `UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE`
-- `email`: `TEXT NOT NULL UNIQUE`
-- `business_name`: `TEXT`
-- `created_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-- `updated_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-
-#### 2. `subscriptions` (Plan Tier & Billing Status - Razorpay)
-- `id`: `UUID PRIMARY KEY DEFAULT gen_random_uuid()`
-- `user_id`: `UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE UNIQUE`
-- `plan`: `TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'pro'))`
-- `status`: `TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'trialing', 'past_due', 'canceled'))`
-- `razorpay_customer_id`: `TEXT`
-- `razorpay_subscription_id`: `TEXT`
-- `current_period_start`: `TIMESTAMPTZ`
-- `current_period_end`: `TIMESTAMPTZ`
-- `created_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-- `updated_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-
-#### 3. `bots` (Multi-bot Configuration per Business)
-- `id`: `UUID PRIMARY KEY DEFAULT gen_random_uuid()`
-- `user_id`: `UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE`
-- `name`: `TEXT NOT NULL`
-- `system_prompt`: `TEXT DEFAULT 'You are a helpful customer support assistant for our business.'`
-- `branding_color`: `TEXT DEFAULT '#3B82F6'`
-- `public_token`: `TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex')`
-- `is_active`: `BOOLEAN DEFAULT true NOT NULL`
-- `created_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-- `updated_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-
-#### 4. `messages` (Chat Logs per Bot & Analytics Data)
-- `id`: `UUID PRIMARY KEY DEFAULT gen_random_uuid()`
-- `bot_id`: `UUID NOT NULL REFERENCES public.bots(id) ON DELETE CASCADE`
-- `session_id`: `TEXT NOT NULL`
-- `question`: `TEXT NOT NULL`
-- `answer`: `TEXT NOT NULL`
-- `token_usage`: `INTEGER DEFAULT 0 NOT NULL`
-- `created_at`: `TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL`
-
 ---
 
-## Row Level Security (RLS) Strategy
-- `users`: Only authenticated account holders can SELECT/UPDATE their own record (`auth.uid() = id`).
-- `subscriptions`: Only authenticated account holders can SELECT their active plan (`auth.uid() = user_id`).
-- `bots`: Business owners have full CRUD access over their bots (`auth.uid() = user_id`). Public anon users can query active bots by `public_token` for chat embeds.
-- `messages`: Business owners can view chat history for bots they own (`EXISTS (SELECT 1 FROM bots WHERE bots.id = messages.bot_id AND bots.user_id = auth.uid())`). Visitors can append questions and answers.
-
----
-
-## Automatic New User Onboarding Trigger
-The migration script includes `public.handle_new_user()` executed `AFTER INSERT ON auth.users`:
-1. Extracts email and `business_name` from metadata and inserts into `public.users`.
-2. Creates an initial active `free` tier record in `public.subscriptions`.
+## Next Steps (Step 3: Bot Management & AI Chat Engine)
+1. **Bot Studio UI**: Build the bot creation form in `/dashboard` (Bot Name, System Prompt, Custom Business Knowledge base).
+2. **FastAPI Chat Endpoint**: Connect Google Gemini 1.5 Flash to generate grounded responses using the bot's custom prompt & knowledge.
+3. **Embeddable Chat Widget**: Web component / floating widget for business websites communicating with `/api/chat`.
+4. **Analytics View**: Message history, token counts, and visitor sessions display in the dashboard.
